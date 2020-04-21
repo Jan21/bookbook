@@ -24,6 +24,23 @@ from nbconvert.exporters import PDFExporter, LatexExporter
 from nbconvert.writers import FilesWriter
 from nbconvert.utils.pandoc import pandoc
 from .filter_links import convert_links
+from nbconvert.preprocessors import Preprocessor
+
+
+class PelicanSubCell(Preprocessor):
+    """A Pelican specific preprocessor to remove some of the cells of a notebook"""
+
+
+    def preprocess_cell(self,cell, resources,index):
+        """
+        Adds bold 'cheese' to the start of every markdown cell.
+        """
+        if '[jupyter]' in cell.source and cell.cell_type == "markdown":
+            cell.source = cell.source+'**cheese** ' 
+        return cell, resources
+
+
+
 
 log = logging.getLogger(__name__)
 
@@ -132,7 +149,10 @@ def export(combined_nb: NotebookNode, output_file: Path, pdf=False,
     resources['output_files_dir'] = 'combined_files'
 
     log.info('Converting to %s', 'pdf' if pdf else 'latex')
+    MyLatexPDFExporter.preprocessors = [PelicanSubCell]
     exporter = MyLatexPDFExporter() if pdf else MyLatexExporter()
+
+    print("---------------------",exporter.preprocessors)
     if template_file is not None:
         exporter.template_file = str(template_file)
     writer = FilesWriter(build_directory=str(output_file.parent))
